@@ -1,0 +1,353 @@
+---
+title: "PSI-Individual-Project"
+author: "Aiden O'Neill"
+date: "1/4/2021"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+
+```{r Setup}
+#Setting up dataset to use in following chunks
+calculate_mode <- function(x) {
+  uniqx <- unique(x)
+  uniqx[which.max(tabulate(match(x, uniqx)))]
+}
+
+
+needed_packages <- c("readxl", "ggplot2", "dplyr", "semTools", "FSA", "car", "effectsize", "userfriendlyscience", "rstatix", "sjstats", "gmodels","stargazer","lm.beta","foreign","olsrr", "psych",  "REdaS", "Hmisc", "corrplot", "ggcorrplot", "factoextra",  "nFactors", "HDclassif")                                    
+# Extract not installed packages
+not_installed <- needed_packages[!(needed_packages %in% installed.packages()[ , "Package"])]    
+# Install not installed packages
+if(length(not_installed)) install.packages(not_installed)                            
+library(readxl) 
+library(ggplot2) #For creating histograms with more detail than plot
+library(dplyr) #For creating histograms with more detail than plot
+
+library(semTools) #For skewness and kurtosis
+library(FSA)
+library(car) # For Levene's test for homogeneity of variance 
+library(effectsize) #To calculate effect size for t-test
+library(userfriendlyscience)
+library(rstatix)#Kruskal wallis effect size
+library(sjstats)#chi-square effect size
+library(gmodels)#chi-square effect size
+library(olsrr)
+library(foreign) #To work with SPSS data
+library(lm.beta) #Will allow us to isolate the beta co-efficients
+library(stargazer)#For formatting outputs/tables
+library(psych)
+library(REdaS)
+library(Hmisc)
+library(corrplot)
+library(ggcorrplot)
+library(factoextra)#Used for principal component analysis to get a different view of eigenvalues
+library(nFactors)
+library(HDclassif)
+
+academicPerformanceData <- read_excel("data_academic_performance.xlsx")
+
+#Deal with missing data
+academicPerformanceData[academicPerformanceData=="Not sure"]<-"0"
+for(i in 1:ncol(academicPerformanceData)){
+  if(is.character(academicPerformanceData[[i]])){
+      academicPerformanceData[i][academicPerformanceData[i]=="0"] <- calculate_mode(academicPerformanceData[[i]])
+    }
+}
+
+```
+
+```{r dataset English Grade 11}
+summary(academicPerformanceData$ENG_S11)
+
+gm <- ggplot(academicPerformanceData, aes(x=ENG_S11))
+gm <- gm + labs(x="English Skills - Grade 11")
+gm <- gm + geom_histogram(binwidth=1, colour="black" , aes(y=..density.., fill=..count..))
+gm <- gm + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gm <- gm + stat_function(fun=dnorm, color="red",args=list(mean=mean(academicPerformanceData$ENG_S11, na.rm=TRUE), sd=sd(academicPerformanceData$ENG_S11, na.rm=TRUE)))
+gm
+
+qqnorm(academicPerformanceData$ENG_S11)
+qqline(academicPerformanceData$ENG_S11, col=1) 
+
+pastecs::stat.desc(academicPerformanceData$ENG_S11, basic=F)
+
+tpskew<-semTools::skew(academicPerformanceData$ENG_S11)
+tpkurt<-semTools::kurtosis(academicPerformanceData$ENG_S11)
+tpskew[1]/tpskew[2]
+
+tpkurt[1]/tpkurt[2]
+
+zENG_S11<- abs(scale(academicPerformanceData$ENG_S11))
+
+FSA::perc(as.numeric(zENG_S11), 1.96, "gt")
+FSA::perc(as.numeric(zENG_S11), 3.29, "gt")
+
+```
+
+```{r dataset English {Grade Professional}
+summary(academicPerformanceData$ENG_PRO)
+
+gm <- ggplot(academicPerformanceData, aes(x=ENG_PRO))
+gm <- gm + labs(x="English SKills - Professional")
+gm <- gm + geom_histogram(binwidth=1, colour="black" , aes(y=..density.., fill=..count..))
+gm <- gm + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gm <- gm + stat_function(fun=dnorm, color="red",args=list(mean=mean(academicPerformanceData$ENG_PRO, na.rm=TRUE), sd=sd(academicPerformanceData$ENG_PRO, na.rm=TRUE)))
+gm
+
+qqnorm(academicPerformanceData$ENG_PRO)
+qqline(academicPerformanceData$ENG_PRO, col=1) 
+
+pastecs::stat.desc(academicPerformanceData$ENG_PRO, basic=F)
+
+tpskew<-semTools::skew(academicPerformanceData$ENG_PRO)
+tpkurt<-semTools::kurtosis(academicPerformanceData$ENG_PRO)
+tpskew[1]/tpskew[2]
+
+tpkurt[1]/tpkurt[2]
+
+zENG_PRO<- abs(scale(academicPerformanceData$ENG_PRO))
+
+FSA::perc(as.numeric(zENG_PRO), 1.96, "gt")
+FSA::perc(as.numeric(zENG_PRO), 3.29, "gt")
+
+```
+
+```{r dataset TV}
+summary(academicPerformanceData$TV)
+
+gg <- ggplot(academicPerformanceData, aes(x=TV))
+gg <- gg + labs(x="Access to TV")
+gg <- gg + geom_bar(fill="blue")
+gg
+
+```
+
+```{r dataset Internet}
+summary(academicPerformanceData$INTERNET)
+
+gg <- ggplot(academicPerformanceData, aes(x=INTERNET))
+gg <- gg + labs(x="Access to Internet")
+gg <- gg + geom_bar(fill="darkgreen")
+gg
+
+```
+
+```{r dataset Internet}
+summary(academicPerformanceData$COMPUTER)
+
+gg <- ggplot(academicPerformanceData, aes(x=COMPUTER))
+gg <- gg + labs(x="Access to a computer")
+gg <- gg + geom_bar(fill="red")
+gg
+
+```
+
+```{r dataset Correlation ENG_S11 ENG_PRO}
+
+scatter <- ggplot2::ggplot(academicPerformanceData, aes(ENG_S11, ENG_PRO))
+scatter + geom_point() + labs(x = "English Grade 11", y = "English Grade Professional") 
+
+#Add a regression line
+scatter + geom_point() + geom_smooth(method = "lm", colour = "Red", se = F) + labs(x = "English Grade 11", y = "English Grade Professional") 
+
+#Pearson Correlation
+stats::cor.test(academicPerformanceData$ENG_S11, academicPerformanceData$ENG_PRO, method='pearson')
+
+```
+
+```{r dataset Correlation ENG_PRO INTERNET}
+academicPerformanceData$internetAccess=ifelse(academicPerformanceData$INTERNET == "No", 0, ifelse(academicPerformanceData$INTERNET  == "Yes", 1, NA))
+
+
+scatter <- ggplot2::ggplot(academicPerformanceData, aes(internetAccess, ENG_PRO))
+scatter + geom_point() + labs(x = "internetAccess", y = "English Grade Professional") 
+
+#Add a regression line
+scatter + geom_point() + geom_smooth(method = "lm", colour = "Red", se = F) + labs(x = "internetAccess", y = "English Grade Professional") 
+
+#Pearson Correlation
+stats::cor.test(academicPerformanceData$internetAccess, academicPerformanceData$ENG_PRO, method='pearson')
+
+```
+
+```{r dataset Correlation ENG_PRO TV}
+academicPerformanceData$TVAccess=ifelse(academicPerformanceData$TV == "No", 0, ifelse(academicPerformanceData$TV  == "Yes", 1, NA))
+
+
+scatter <- ggplot2::ggplot(academicPerformanceData, aes(TVAccess, ENG_PRO))
+scatter + geom_point() + labs(x = "TVAccess", y = "English Grade Professional") 
+
+#Add a regression line
+scatter + geom_point() + geom_smooth(method = "lm", colour = "Red", se = F) + labs(x = "TVAccess", y = "English Grade Professional") 
+
+#Pearson Correlation
+stats::cor.test(academicPerformanceData$TVAccess, academicPerformanceData$ENG_PRO, method='pearson')
+
+```
+
+```{r dataset Correlation ENG_PRO Computer}
+academicPerformanceData$ComputerAccess=ifelse(academicPerformanceData$COMPUTER == "No", 0, ifelse(academicPerformanceData$COMPUTER  == "Yes", 1, NA))
+
+
+scatter <- ggplot2::ggplot(academicPerformanceData, aes(ComputerAccess, ENG_PRO))
+scatter + geom_point() + labs(x = "ComputerAccess", y = "English Grade Professional") 
+
+#Add a regression line
+scatter + geom_point() + geom_smooth(method = "lm", colour = "Red", se = F) + labs(x = "ComputerAccess", y = "English Grade Professional") 
+
+#Pearson Correlation
+stats::cor.test(academicPerformanceData$ComputerAccess, academicPerformanceData$ENG_PRO, method='pearson')
+
+```
+
+```{r dataset Correlation ENG_PRO School Type}
+academicPerformanceData$schoolType=ifelse(academicPerformanceData$SCHOOL_NAT == "PUBLIC", 0, ifelse(academicPerformanceData$SCHOOL_NAT  == "PRIVATE", 1, NA))
+
+
+scatter <- ggplot2::ggplot(academicPerformanceData, aes(schoolType, ENG_PRO))
+scatter + geom_point() + labs(x = "ComputerAccess", y = "English Grade Professional") 
+
+#Add a regression line
+scatter + geom_point() + geom_smooth(method = "lm", colour = "Red", se = F) + labs(x = "schoolType", y = "English Grade Professional") 
+
+#Pearson Correlation
+stats::cor.test(academicPerformanceData$schoolType, academicPerformanceData$ENG_PRO, method='pearson')
+
+```
+
+```{r Linear Regression}
+
+academicPerformanceData$ComputerAccess=ifelse(academicPerformanceData$COMPUTER == "No", 0, ifelse(academicPerformanceData$COMPUTER  == "Yes", 1, NA))
+academicPerformanceData$TVAccess=ifelse(academicPerformanceData$TV == "No", 0, ifelse(academicPerformanceData$TV  == "Yes", 1, NA))
+academicPerformanceData$internetAccess=ifelse(academicPerformanceData$INTERNET == "No", 0, ifelse(academicPerformanceData$INTERNET  == "Yes", 1, NA))
+
+
+model1=lm(academicPerformanceData$ENG_PRO~academicPerformanceData$ENG_S11 + 
+            academicPerformanceData$internetAccess+academicPerformanceData$TVAccess+academicPerformanceData$ComputerAccess)
+summary(model1)
+
+anova(model1)
+lm.beta::lm.beta(model1)
+stargazer(model1, type="text") #Tidy output of all the required stats
+plot(model1)
+
+
+#Influential Outliers - Cook's distance
+cooksd<-sort(cooks.distance(model1))
+# plot Cook's distance
+plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance")  
+abline(h = 4*mean(cooksd, na.rm=T), col="red")  # add cutoff line
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4*mean(cooksd, na.rm=T),names(cooksd),""), col="red")  # add labels
+
+
+#find rows related to influential observations
+cooksd<-sort(cooks.distance(model1))
+influential <- as.numeric(names(cooksd)[(cooksd > 4*mean(cooksd, na.rm=T))])  # influential row numbers
+stem(influential)
+head(academicPerformanceData[influential, ])  
+
+plot(cooks.distance(model1), pch = 16, col = "blue") 
+
+car::outlierTest(model1) 
+
+car::leveragePlots(model1) 
+
+plot(density(resid(model1))) 
+
+car::qqPlot(model1, main="QQ Plot Model 1") 
+
+vifmodel<-car::vif(model1)
+vifmodel
+#Tolerance
+1/vifmodel
+
+```
+
+```{r dataset Global Score}
+summary(academicPerformanceData$G_SC)
+
+gm <- ggplot(academicPerformanceData, aes(x=G_SC))
+gm <- gm + labs(x="Global Score")
+gm <- gm + geom_histogram(binwidth=1, colour="black" , aes(y=..density.., fill=..count..))
+gm <- gm + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gm <- gm + stat_function(fun=dnorm, color="red",args=list(mean=mean(academicPerformanceData$G_SC, na.rm=TRUE), sd=sd(academicPerformanceData$G_SC, na.rm=TRUE)))
+gm
+
+qqnorm(academicPerformanceData$G_SC)
+qqline(academicPerformanceData$G_SC, col=1) 
+
+pastecs::stat.desc(academicPerformanceData$G_SC, basic=F)
+
+tpskew<-semTools::skew(academicPerformanceData$G_SC)
+tpkurt<-semTools::kurtosis(academicPerformanceData$G_SC)
+tpskew[1]/tpskew[2]
+
+tpkurt[1]/tpkurt[2]
+
+zG_SC<- abs(scale(academicPerformanceData$G_SC))
+
+FSA::perc(as.numeric(zG_SC), 1.96, "gt")
+FSA::perc(as.numeric(zG_SC), 3.29, "gt")
+
+```
+
+```{r dataset Correlation Global Score ENG_PRO}
+
+scatter <- ggplot2::ggplot(academicPerformanceData, aes(G_SC, ENG_PRO))
+scatter + geom_point() + labs(x = "Glob Score", y = "English Grade Professional") 
+
+#Add a regression line
+scatter + geom_point() + geom_smooth(method = "lm", colour = "Red", se = F) + labs(x = "Global Score", y = "English Grade Professional") 
+
+#Pearson Correlation
+stats::cor.test(academicPerformanceData$G_SC, academicPerformanceData$ENG_PRO, method='pearson')
+
+```
+
+```{r Linear Regression 2}
+
+academicPerformanceData$internetAccess=ifelse(academicPerformanceData$INTERNET == "No", 0, ifelse(academicPerformanceData$INTERNET  == "Yes", 1, NA))
+
+model2=lm(academicPerformanceData$ENG_PRO~academicPerformanceData$ENG_S11 + academicPerformanceData$internetAccess + academicPerformanceData$G_SC)
+summary(model2)
+
+anova(model2)
+lm.beta::lm.beta(model2)
+stargazer(model2, type="text") #Tidy output of all the required stats
+plot(model2)
+
+
+#Influential Outliers - Cook's distance
+cooksd<-sort(cooks.distance(model2))
+# plot Cook's distance
+plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance")  
+abline(h = 4*mean(cooksd, na.rm=T), col="red")  # add cutoff line
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4*mean(cooksd, na.rm=T),names(cooksd),""), col="red")  # add labels
+
+
+#find rows related to influential observations
+cooksd<-sort(cooks.distance(model2))
+influential <- as.numeric(names(cooksd)[(cooksd > 4*mean(cooksd, na.rm=T))])  # influential row numbers
+stem(influential)
+head(academicPerformanceData[influential, ])  # influential observations.
+
+plot(cooks.distance(model2), pch = 16, col = "darkgreen") #Plot the Cooks Distances.
+
+car::outlierTest(model2) 
+
+car::leveragePlots(model2) 
+
+plot(density(resid(model2))) 
+
+car::qqPlot(model2, main="QQ Plot Model 1") #qq plot for studentized resid
+
+vifmodel<-car::vif(model1)
+vifmodel
+#Tolerance
+1/vifmodel
+
+```
+
