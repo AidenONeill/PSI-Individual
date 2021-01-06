@@ -17,7 +17,7 @@ calculate_mode <- function(x) {
 }
 
 
-needed_packages <- c("readxl", "ggplot2", "dplyr", "semTools", "FSA", "car", "effectsize", "userfriendlyscience", "rstatix", "sjstats", "gmodels","stargazer","lm.beta","foreign","olsrr", "psych",  "REdaS", "Hmisc", "corrplot", "ggcorrplot", "factoextra",  "nFactors", "HDclassif")                                    
+needed_packages <- c("readxl", "ggplot2", "dplyr", "semTools", "FSA", "car","stargazer","lm.beta", "REdaS", "Hmisc")                                    
 # Extract not installed packages
 not_installed <- needed_packages[!(needed_packages %in% installed.packages()[ , "Package"])]    
 # Install not installed packages
@@ -29,23 +29,10 @@ library(dplyr) #For creating histograms with more detail than plot
 library(semTools) #For skewness and kurtosis
 library(FSA)
 library(car) # For Levene's test for homogeneity of variance 
-library(effectsize) #To calculate effect size for t-test
-library(userfriendlyscience)
-library(rstatix)#Kruskal wallis effect size
-library(sjstats)#chi-square effect size
-library(gmodels)#chi-square effect size
-library(olsrr)
-library(foreign) #To work with SPSS data
 library(lm.beta) #Will allow us to isolate the beta co-efficients
 library(stargazer)#For formatting outputs/tables
-library(psych)
 library(REdaS)
 library(Hmisc)
-library(corrplot)
-library(ggcorrplot)
-library(factoextra)#Used for principal component analysis to get a different view of eigenvalues
-library(nFactors)
-library(HDclassif)
 
 academicPerformanceData <- read_excel("data_academic_performance.xlsx")
 
